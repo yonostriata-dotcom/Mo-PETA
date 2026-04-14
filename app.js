@@ -4,11 +4,11 @@
 
 var CONFIG = {
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx_BBwJLfZjJO0VJrWrXVMquDoz6UHhiNfm_7_p1ju7Rn60XCs7RdchoUp9x-Lw8nqXFw/exec",
-  WHATSAPP: "6281275540985",   // ← Ganti dengan nomor WhatsApp
-  INSTAGRAM: "mopeta.official" // ← Ganti dengan username Instagram
+  WHATSAPP: "62895425966562",    // ← Ganti dengan nomor WhatsApp (format: 628xxx)
+  INSTAGRAM: "mopeta.official"  // ← Ganti dengan username Instagram
 };
 
-// Setel link WA & IG di footer
+// Setel link WA & IG di footer, tandai nav aktif, inisialisasi halaman
 document.addEventListener("DOMContentLoaded", function () {
   var waLinks = document.querySelectorAll(".footer-wa");
   var igLinks = document.querySelectorAll(".footer-ig");
@@ -21,22 +21,18 @@ document.addEventListener("DOMContentLoaded", function () {
     el.target = "_blank";
   });
 
-  // Tandai nav aktif
   var path = window.location.pathname.split("/").pop() || "index.html";
   var navLinks = document.querySelectorAll(".nav-link");
   navLinks.forEach(function (link) {
-    if (link.getAttribute("href") === path) {
-      link.classList.add("active");
-    }
+    if (link.getAttribute("href") === path) link.classList.add("active");
   });
 
-  // Inisialisasi halaman
   if (typeof initPage === "function") initPage();
 });
 
 
 // ============================================================
-// Utilitas: Panggil API (semua pakai GET)
+// Utilitas: Panggil API via JSONP (semua pakai GET)
 // ============================================================
 function apiGet(params, callback) {
   var url = CONFIG.SCRIPT_URL + "?" + objToQuery(params);
@@ -74,12 +70,12 @@ function initFormPesan() {
   var form = document.getElementById("form-pesan");
   if (!form) return;
 
-  var jenisPetaSelect = document.getElementById("jenis-peta");
-  var sectionLokasi = document.getElementById("section-lokasi");
-  var sectionWa = document.getElementById("section-wa");
-  var jenisLokasiSelect = document.getElementById("jenis-lokasi");
+  var jenisPetaSelect    = document.getElementById("jenis-peta");
+  var sectionLokasi      = document.getElementById("section-lokasi");
+  var sectionWa          = document.getElementById("section-wa");
+  var jenisLokasiSelect  = document.getElementById("jenis-lokasi");
   var sectionDetailLokasi = document.getElementById("section-detail-lokasi");
-  var labelDetail = document.getElementById("label-detail");
+  var labelDetail        = document.getElementById("label-detail");
 
   jenisPetaSelect.addEventListener("change", function () {
     var val = this.value;
@@ -128,9 +124,9 @@ function initFormPesan() {
 }
 
 function kirimPesanan() {
-  var btn = document.getElementById("btn-kirim");
+  var btn      = document.getElementById("btn-kirim");
   var statusEl = document.getElementById("status-pesan");
-  var hasilEl = document.getElementById("hasil-pesan");
+  var hasilEl  = document.getElementById("hasil-pesan");
 
   btn.disabled = true;
   btn.textContent = "Mengirim...";
@@ -138,13 +134,14 @@ function kirimPesanan() {
   hasilEl.style.display = "none";
 
   var params = {
-    action: "submitOrder",
-    bahasa: document.getElementById("bahasa").value,
-    nama: document.getElementById("nama").value,
-    nim: document.getElementById("nim").value,
+    action:       "submitOrder",
+    bahasa:       document.getElementById("bahasa").value,
+    nama:         document.getElementById("nama").value,
+    nim:          document.getElementById("nim").value,
     programStudi: document.getElementById("program-studi").value,
-    jenisPeta: document.getElementById("jenis-peta").value,
-    jenisLokasi: document.getElementById("jenis-lokasi") ? document.getElementById("jenis-lokasi").value : "-",
+    kontak:       document.getElementById("kontak").value,
+    jenisPeta:    document.getElementById("jenis-peta").value,
+    jenisLokasi:  document.getElementById("jenis-lokasi") ? document.getElementById("jenis-lokasi").value : "-",
     detailLokasi: document.getElementById("detail-lokasi") ? document.getElementById("detail-lokasi").value : "-"
   };
 
@@ -168,8 +165,8 @@ function kirimPesanan() {
   });
 }
 
-function salinId(elId) {
-  var el = document.getElementById(elId) || document.querySelector(".order-id-display");
+function salinId() {
+  var el = document.querySelector(".order-id-display");
   var teks = el ? el.textContent.trim() : "";
   if (!teks) return;
   navigator.clipboard.writeText(teks).then(function () {
@@ -187,26 +184,15 @@ function salinId(elId) {
 // HALAMAN LACAK PESANAN
 // ============================================================
 function initLacak() {
-  var formId = document.getElementById("form-lacak-id");
+  var formId  = document.getElementById("form-lacak-id");
   var formNim = document.getElementById("form-lacak-nim");
 
-  if (formId) {
-    formId.addEventListener("submit", function (e) {
-      e.preventDefault();
-      lacakById();
-    });
-  }
-
-  if (formNim) {
-    formNim.addEventListener("submit", function (e) {
-      e.preventDefault();
-      lacakByNim();
-    });
-  }
+  if (formId)  formId.addEventListener("submit",  function (e) { e.preventDefault(); lacakById(); });
+  if (formNim) formNim.addEventListener("submit", function (e) { e.preventDefault(); lacakByNim(); });
 }
 
 function lacakById() {
-  var id = document.getElementById("input-id").value.trim().toUpperCase();
+  var id      = document.getElementById("input-id").value.trim().toUpperCase();
   var hasilEl = document.getElementById("hasil-lacak-id");
   hasilEl.innerHTML = '<p class="loading">Mencari pesanan...</p>';
 
@@ -227,6 +213,7 @@ function lacakById() {
           '<div class="order-row"><span>Nama</span><span>' + o.nama + '</span></div>' +
           '<div class="order-row"><span>NIM</span><span>' + o.nim + '</span></div>' +
           '<div class="order-row"><span>Program Studi</span><span>' + o.programStudi + '</span></div>' +
+          '<div class="order-row"><span>Kontak</span><span>' + o.kontak + '</span></div>' +
           '<div class="order-row"><span>Jenis Peta</span><span>' + o.jenisPeta + '</span></div>' +
           (o.jenisLokasi && o.jenisLokasi !== "-" ? '<div class="order-row"><span>Jenis Lokasi</span><span>' + o.jenisLokasi + '</span></div>' : '') +
           (o.detailLokasi && o.detailLokasi !== "-" ? '<div class="order-row"><span>Detail Lokasi</span><span>' + o.detailLokasi + '</span></div>' : '') +
@@ -238,7 +225,7 @@ function lacakById() {
 }
 
 function lacakByNim() {
-  var nim = document.getElementById("input-nim").value.trim();
+  var nim     = document.getElementById("input-nim").value.trim();
   var hasilEl = document.getElementById("hasil-lacak-nim");
   hasilEl.innerHTML = '<p class="loading">Mencari riwayat...</p>';
 
@@ -296,10 +283,10 @@ function salinTeks(teks, btn) {
 function getStatusClass(status) {
   var map = {
     "Menunggu Konfirmasi": "badge-kuning",
-    "Diproses": "badge-biru",
-    "Menunggu Revisi": "badge-oranye",
-    "Selesai": "badge-hijau",
-    "Dibatalkan": "badge-merah"
+    "Diproses":            "badge-biru",
+    "Menunggu Revisi":     "badge-oranye",
+    "Selesai":             "badge-hijau",
+    "Dibatalkan":          "badge-merah"
   };
   return map[status] || "badge-abu";
 }
