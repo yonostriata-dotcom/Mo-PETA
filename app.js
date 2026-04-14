@@ -3,9 +3,11 @@
 // ============================================================
 
 var CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx_BBwJLfZjJO0VJrWrXVMquDoz6UHhiNfm_7_p1ju7Rn60XCs7RdchoUp9x-Lw8nqXFw/exec",
-  WHATSAPP: "62895425966562",    // ← Ganti dengan nomor WhatsApp (format: 628xxx)
-  INSTAGRAM: "mopeta.official"  // ← Ganti dengan username Instagram
+  SCRIPT_URL:     "https://script.google.com/macros/s/AKfycbx_BBwJLfZjJO0VJrWrXVMquDoz6UHhiNfm_7_p1ju7Rn60XCs7RdchoUp9x-Lw8nqXFw/exec",
+  WHATSAPP:       "62895425966562",    // ← Ganti dengan nomor WhatsApp (format: 628xxx)
+  INSTAGRAM:      "mopeta.official",  // ← Ganti dengan username Instagram
+  ADMIN_KODE:     "mopeta-mimin",     // ← Kode di URL: admin.html?kode=mopeta-admin
+  ADMIN_PASSWORD: "ganti3kali"         // ← Kata sandi halaman admin
 };
 
 // Setel link WA & IG di footer, tandai nav aktif, inisialisasi halaman
@@ -289,4 +291,171 @@ function getStatusClass(status) {
     "Dibatalkan":          "badge-merah"
   };
   return map[status] || "badge-abu";
+}
+
+
+// ============================================================
+// HALAMAN ADMIN
+// ============================================================
+var _adminData = [];
+var _filterAktif = "";
+
+function initAdmin() {
+  var params = new URLSearchParams(window.location.search);
+  var kode = params.get("kode") || "";
+
+  // Cek kode URL
+  if (kode !== CONFIG.ADMIN_KODE) {
+    document.getElementById("screen-login").style.display = "none";
+    document.getElementById("screen-denied").style.display = "flex";
+    return;
+  }
+
+  // Setup form login
+  document.getElementById("form-login").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var pw = document.getElementById("input-password").value;
+    if (pw === CONFIG.ADMIN_PASSWORD) {
+      document.getElementById("screen-login").style.display = "none";
+      document.getElementById("screen-admin").style.display = "block";
+      muatSemuaPesanan();
+    } else {
+      document.getElementById("login-error").style.display = "block";
+      document.getElementById("input-password").value = "";
+      document.getElementById("input-password").focus();
+    }
+  });
+}
+
+function logout() {
+  document.getElementById("screen-admin").style.display = "none";
+  document.getElementById("screen-login").style.display = "flex";
+  document.getElementById("input-password").value = "";
+}
+
+function muatSemuaPesanan() {
+  document.getElementById("admin-loading").style.display = "block";
+  document.getElementById("admin-tabel").style.display = "none";
+
+  apiGet({ action: "getAllOrders" }, function (err, data) {
+    document.getElementById("admin-loading").style.display = "none";
+    if (err || !data || !data.success) {
+      document.getElementById("admin-loading").style.display = "block";
+      document.getElementById("admin-loading").textContent = "Gagal memuat data. Coba refresh.";
+      return;
+    }
+    _adminData = data.orders || [];
+    document.getElementById("admin-total").textContent = "Total: " + _adminData.length + " pesanan";
+    tampilkanTabel(_adminData);
+  });
+}
+
+function tampilkanTabel(orders) {
+  var tbody = document.getElementById("admin-tbody");
+  var kosong = document.getElementById("admin-kosong");
+  tbody.innerHTML = "";
+
+  if (!orders || orders.length === 0) {
+    kosong.style.display = "block";
+    document.getElementById("admin-tabel").style.display = "block";
+    return;
+  }
+  kosong.style.display = "none";
+  document.getElementById("admin-tabel").style.display = "block";
+
+  var statusList = ["Menunggu Konfirmasi", "Diproses", "Menunggu Revisi", "Selesai", "Dibatalkan"];
+
+  orders.forEach(function (o) {
+    var statusClass = getStatusClass(o.status);
+    var opsi = statusList.map(function (s) {
+      return '<option value="' + s + '"' + (o.status === s ? " selected" : "") + '>' + s + '</option>';
+    }).join("");
+
+    var detail = [];
+    if (o.jenisLokasi && o.jenisLokasi !== "-") detail.push(o.jenisLokasi);
+    if (o.detailLokasi && o.detailLokasi !== "-") detail.push(o.detailLokasi);
+
+    var tr = document.createElement("tr");
+    tr.setAttribute("data-id", o.id);
+    tr.setAttribute("data-status", o.status || "");
+    tr.setAttribute("data-nama", (o.nama || "").toLowerCase());
+    tr.setAttribute("data-nim", (o.nim || "").toLowerCase());
+    tr.innerHTML =
+      '<td><span class="admin-order-id">' + o.id + '</span><br><small style="color:var(--teks-abu)">' + o.tanggalPesan + '</small></td>' +
+      '<td>' + o.tanggalPesan + '</td>' +
+      '<td><strong>' + o.nama + '</strong><br><small>' + o.programStudi + '</small></td>' +
+      '<td>' + o.nim + '</td>' +
+      '<td style="font-size:0.85rem">' + (o.kontak || "-") + '</td>' +
+      '<td style="font-size:0.85rem">' + o.jenisPeta + (detail.length ? '<br><small style="color:var(--teks-abu)">' + detail.join(" — ") + '</small>' : '') + '</td>' +
+      '<td style="font-size:0.85rem">' + (detail.join("<br>") || "-") + '</td>' +
+      '<td><select class="form-control select-status" style="min-width:160px">' + opsi + '</select>' +
+        '<div style="margin-top:4px"><span class="badge ' + statusClass + '" id="badge-' + o.id + '">' + (o.status || "-") + '</span></div></td>' +
+      '<td><textarea class="form-control" rows="2" style="min-width:180px;font-size:0.85rem" placeholder="Catatan untuk pemesan...">' + (o.catatanAdmin || "") + '</textarea></td>' +
+      '<td><button class="btn-simpan-status" onclick="simpanStatus(this, \'' + o.id + '\')">Simpan</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function simpanStatus(btn, orderId) {
+  var tr = btn.closest("tr");
+  var statusBaru = tr.querySelector(".select-status").value;
+  var catatan = tr.querySelector("textarea").value;
+
+  btn.disabled = true;
+  btn.textContent = "...";
+
+  apiGet({ action: "updateStatus", id: orderId, status: statusBaru, catatan: catatan }, function (err, data) {
+    btn.disabled = false;
+    btn.textContent = "Simpan";
+
+    if (err || !data || !data.success) {
+      btn.textContent = "Gagal!";
+      btn.style.background = "var(--merah)";
+      setTimeout(function () { btn.textContent = "Simpan"; btn.style.background = ""; }, 2500);
+      return;
+    }
+
+    // Update badge status di baris
+    var badge = document.getElementById("badge-" + orderId);
+    if (badge) {
+      badge.textContent = statusBaru;
+      badge.className = "badge " + getStatusClass(statusBaru);
+    }
+    tr.setAttribute("data-status", statusBaru);
+
+    btn.textContent = "✓ Tersimpan";
+    btn.style.background = "var(--hijau)";
+    setTimeout(function () { btn.textContent = "Simpan"; btn.style.background = ""; }, 2500);
+
+    // Update data lokal
+    _adminData.forEach(function (o) { if (o.id === orderId) { o.status = statusBaru; o.catatanAdmin = catatan; } });
+  });
+}
+
+function filterStatus(status, btn) {
+  _filterAktif = status;
+  document.querySelectorAll(".filter-btn").forEach(function (b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+  terapkanFilter();
+}
+
+function cariPesanan(kata) {
+  terapkanFilter(kata);
+}
+
+function terapkanFilter(kata) {
+  var cari = (kata || document.getElementById("admin-search").value || "").toLowerCase();
+  var rows = document.querySelectorAll("#admin-tbody tr");
+  var tampil = 0;
+  rows.forEach(function (tr) {
+    var statusOk = !_filterAktif || tr.getAttribute("data-status") === _filterAktif;
+    var cariOk   = !cari ||
+      tr.getAttribute("data-id").toLowerCase().includes(cari) ||
+      tr.getAttribute("data-nama").includes(cari) ||
+      tr.getAttribute("data-nim").includes(cari);
+    var show = statusOk && cariOk;
+    tr.style.display = show ? "" : "none";
+    if (show) tampil++;
+  });
+  document.getElementById("admin-kosong").style.display = tampil === 0 ? "block" : "none";
 }
