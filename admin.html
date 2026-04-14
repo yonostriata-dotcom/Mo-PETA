@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Mo-PETA</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="screen-login" class="admin-overlay">
+    <div class="admin-login-box">
+      <div class="admin-login-icon">🗺</div>
+      <h2>Mo-PETA Admin</h2>
+      <p>Masukkan kata sandi untuk melanjutkan</p>
+      <div id="login-error" class="alert alert-error" style="display:none">Kata sandi salah. Coba lagi.</div>
+      <form id="form-login">
+        <div class="form-group">
+          <input type="password" id="input-password" class="form-control"
+            placeholder="Kata sandi admin" autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-primary">Masuk</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- AKSES DITOLAK -->
+  <div id="screen-denied" class="admin-overlay" style="display:none">
+    <div class="admin-login-box">
+      <div class="admin-login-icon">🚫</div>
+      <h2>Akses Ditolak</h2>
+      <p>Halaman ini tidak dapat diakses tanpa kode yang valid.</p>
+      <a href="index.html" class="btn-primary" style="display:block;text-align:center;margin-top:12px">Kembali ke Beranda</a>
+    </div>
+  </div>
+
+  <!-- PANEL ADMIN (tersembunyi sampai login) -->
+  <div id="screen-admin" style="display:none">
+
+    <!-- NAVBAR ADMIN -->
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="navbar-brand">
+          <div class="brand-icon">🗺</div>
+          <span>Mo-PETA Admin</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="admin-total" style="color:rgba(255,255,255,0.8);font-size:0.88rem"></span>
+          <button onclick="muatSemuaPesanan()" class="btn-refresh">⟳ Refresh</button>
+          <button onclick="logout()" class="btn-logout">Keluar</button>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="section">
+        <div class="section-inner">
+
+          <!-- Filter & Cari -->
+          <div class="admin-toolbar">
+            <div class="admin-filter">
+              <button class="filter-btn active" onclick="filterStatus('', this)">Semua</button>
+              <button class="filter-btn" onclick="filterStatus('Menunggu Konfirmasi', this)">Menunggu Konfirmasi</button>
+              <button class="filter-btn" onclick="filterStatus('Diproses', this)">Diproses</button>
+              <button class="filter-btn" onclick="filterStatus('Menunggu Revisi', this)">Menunggu Revisi</button>
+              <button class="filter-btn" onclick="filterStatus('Selesai', this)">Selesai</button>
+              <button class="filter-btn" onclick="filterStatus('Dibatalkan', this)">Dibatalkan</button>
+            </div>
+            <input type="text" id="admin-search" class="form-control"
+              placeholder="Cari nama, NIM, atau ID..."
+              oninput="cariPesanan(this.value)"
+              style="max-width:260px" />
+          </div>
+
+          <!-- Loading -->
+          <div id="admin-loading" style="text-align:center;padding:40px 0;color:var(--teks-abu)">
+            Memuat data pesanan...
+          </div>
+
+          <!-- Tabel Pesanan -->
+          <div id="admin-tabel" style="display:none">
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID Pesanan</th>
+                    <th>Tanggal</th>
+                    <th>Nama</th>
+                    <th>NIM</th>
+                    <th>Kontak</th>
+                    <th>Jenis Peta</th>
+                    <th>Detail Lokasi</th>
+                    <th>Status</th>
+                    <th>Catatan Admin</th>
+                    <th>Simpan</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-tbody"></tbody>
+              </table>
+            </div>
+            <p id="admin-kosong" style="display:none;text-align:center;padding:32px;color:var(--teks-abu)">
+              Tidak ada pesanan yang cocok.
+            </p>
+          </div>
+
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    function initPage() { initAdmin(); }
+  </script>
+</body>
+</html>
