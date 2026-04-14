@@ -350,49 +350,166 @@ function muatSemuaPesanan() {
   });
 }
 
+function esc(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buatTd(isi) {
+  var td = document.createElement("td");
+  td.innerHTML = isi;
+  return td;
+}
+
+function buatTdTeks(teks, style) {
+  var td = document.createElement("td");
+  td.textContent = teks || "-";
+  if (style) td.setAttribute("style", style);
+  return td;
+}
+
 function tampilkanTabel(orders) {
   var tbody = document.getElementById("admin-tbody");
   var kosong = document.getElementById("admin-kosong");
+  var tabel  = document.getElementById("admin-tabel");
+
+  if (!tbody || !kosong || !tabel) return;
+
   tbody.innerHTML = "";
 
   if (!orders || orders.length === 0) {
     kosong.style.display = "block";
-    document.getElementById("admin-tabel").style.display = "block";
+    tabel.style.display = "block";
     return;
   }
   kosong.style.display = "none";
-  document.getElementById("admin-tabel").style.display = "block";
+  tabel.style.display = "block";
 
   var statusList = ["Menunggu Konfirmasi", "Diproses", "Menunggu Revisi", "Selesai", "Dibatalkan"];
 
   orders.forEach(function (o) {
-    var statusClass = getStatusClass(o.status);
-    var opsi = statusList.map(function (s) {
-      return '<option value="' + s + '"' + (o.status === s ? " selected" : "") + '>' + s + '</option>';
-    }).join("");
+    try {
+      var id          = o.id           || "";
+      var tgl         = o.tanggalPesan ? String(o.tanggalPesan).substring(0, 16) : "-";
+      var nama        = o.nama         || "-";
+      var prodi       = o.programStudi || "-";
+      var nim         = String(o.nim   || "-");
+      var kontak      = o.kontak       || "-";
+      var jenisPeta   = o.jenisPeta    || "-";
+      var jenisLokasi = o.jenisLokasi  || "-";
+      var detailLok   = o.detailLokasi || "-";
+      var status      = o.status       || "Menunggu Konfirmasi";
+      var catatan     = o.catatanAdmin || "";
 
-    var detail = [];
-    if (o.jenisLokasi && o.jenisLokasi !== "-") detail.push(o.jenisLokasi);
-    if (o.detailLokasi && o.detailLokasi !== "-") detail.push(o.detailLokasi);
+      var tr = document.createElement("tr");
+      tr.setAttribute("data-id",     id);
+      tr.setAttribute("data-status", status);
+      tr.setAttribute("data-nama",   nama.toLowerCase());
+      tr.setAttribute("data-nim",    nim.toLowerCase());
 
-    var tr = document.createElement("tr");
-    tr.setAttribute("data-id", o.id);
-    tr.setAttribute("data-status", o.status || "");
-    tr.setAttribute("data-nama", (o.nama || "").toLowerCase());
-    tr.setAttribute("data-nim", (o.nim || "").toLowerCase());
-    tr.innerHTML =
-      '<td><span class="admin-order-id">' + o.id + '</span><br><small style="color:var(--teks-abu)">' + o.tanggalPesan + '</small></td>' +
-      '<td>' + o.tanggalPesan + '</td>' +
-      '<td><strong>' + o.nama + '</strong><br><small>' + o.programStudi + '</small></td>' +
-      '<td>' + o.nim + '</td>' +
-      '<td style="font-size:0.85rem">' + (o.kontak || "-") + '</td>' +
-      '<td style="font-size:0.85rem">' + o.jenisPeta + (detail.length ? '<br><small style="color:var(--teks-abu)">' + detail.join(" — ") + '</small>' : '') + '</td>' +
-      '<td style="font-size:0.85rem">' + (detail.join("<br>") || "-") + '</td>' +
-      '<td><select class="form-control select-status" style="min-width:160px">' + opsi + '</select>' +
-        '<div style="margin-top:4px"><span class="badge ' + statusClass + '" id="badge-' + o.id + '">' + (o.status || "-") + '</span></div></td>' +
-      '<td><textarea class="form-control" rows="2" style="min-width:180px;font-size:0.85rem" placeholder="Catatan untuk pemesan...">' + (o.catatanAdmin || "") + '</textarea></td>' +
-      '<td><button class="btn-simpan-status" onclick="simpanStatus(this, \'' + o.id + '\')">Simpan</button></td>';
-    tbody.appendChild(tr);
+      // Kolom 1: ID
+      var tdId = document.createElement("td");
+      var spanId = document.createElement("span");
+      spanId.className = "admin-order-id";
+      spanId.textContent = id;
+      var smallTgl = document.createElement("small");
+      smallTgl.style.color = "var(--teks-abu)";
+      smallTgl.textContent = tgl;
+      tdId.appendChild(spanId);
+      tdId.appendChild(document.createElement("br"));
+      tdId.appendChild(smallTgl);
+      tr.appendChild(tdId);
+
+      // Kolom 2: Nama + Prodi
+      var tdNama = document.createElement("td");
+      var strong = document.createElement("strong");
+      strong.textContent = nama;
+      var smallProdi = document.createElement("small");
+      smallProdi.textContent = prodi;
+      tdNama.appendChild(strong);
+      tdNama.appendChild(document.createElement("br"));
+      tdNama.appendChild(smallProdi);
+      tr.appendChild(tdNama);
+
+      // Kolom 3: NIM
+      tr.appendChild(buatTdTeks(nim));
+
+      // Kolom 4: Kontak
+      tr.appendChild(buatTdTeks(kontak, "font-size:0.85rem"));
+
+      // Kolom 5: Jenis Peta + detail singkat
+      var tdPeta = document.createElement("td");
+      tdPeta.style.fontSize = "0.85rem";
+      tdPeta.textContent = jenisPeta;
+      if (jenisLokasi !== "-") {
+        var br1 = document.createElement("br");
+        var smallLok = document.createElement("small");
+        smallLok.style.color = "var(--teks-abu)";
+        smallLok.textContent = jenisLokasi;
+        tdPeta.appendChild(br1);
+        tdPeta.appendChild(smallLok);
+      }
+      tr.appendChild(tdPeta);
+
+      // Kolom 6: Detail Lokasi
+      var tdDetail = document.createElement("td");
+      tdDetail.style.fontSize = "0.85rem";
+      tdDetail.textContent = detailLok;
+      tr.appendChild(tdDetail);
+
+      // Kolom 7: Status dropdown + badge
+      var tdStatus = document.createElement("td");
+      var select = document.createElement("select");
+      select.className = "form-control select-status";
+      select.style.minWidth = "160px";
+      statusList.forEach(function (s) {
+        var opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = s;
+        if (s === status) opt.selected = true;
+        select.appendChild(opt);
+      });
+      var divBadge = document.createElement("div");
+      divBadge.style.marginTop = "4px";
+      var badge = document.createElement("span");
+      badge.className = "badge " + getStatusClass(status);
+      badge.id = "badge-" + id;
+      badge.textContent = status;
+      divBadge.appendChild(badge);
+      tdStatus.appendChild(select);
+      tdStatus.appendChild(divBadge);
+      tr.appendChild(tdStatus);
+
+      // Kolom 8: Catatan Admin
+      var tdCatatan = document.createElement("td");
+      var textarea = document.createElement("textarea");
+      textarea.className = "form-control";
+      textarea.rows = 2;
+      textarea.style.minWidth = "180px";
+      textarea.style.fontSize = "0.85rem";
+      textarea.placeholder = "Catatan untuk pemesan...";
+      textarea.value = catatan;
+      tdCatatan.appendChild(textarea);
+      tr.appendChild(tdCatatan);
+
+      // Kolom 9: Tombol Simpan
+      var tdBtn = document.createElement("td");
+      var btn = document.createElement("button");
+      btn.className = "btn-simpan-status";
+      btn.textContent = "Simpan";
+      btn.setAttribute("data-order-id", id);
+      btn.addEventListener("click", function () { simpanStatus(this, id); });
+      tdBtn.appendChild(btn);
+      tr.appendChild(tdBtn);
+
+      tbody.appendChild(tr);
+
+    } catch (e) {
+      console.error("Error render baris:", e, o);
+    }
   });
 }
 
