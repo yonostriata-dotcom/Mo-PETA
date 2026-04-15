@@ -4,10 +4,10 @@
 
 var CONFIG = {
   SCRIPT_URL:     "https://script.google.com/macros/s/AKfycbx_BBwJLfZjJO0VJrWrXVMquDoz6UHhiNfm_7_p1ju7Rn60XCs7RdchoUp9x-Lw8nqXFw/exec",
-  WHATSAPP:       "6281234567890",    // ← Ganti dengan nomor WhatsApp (format: 628xxx)
+  WHATSAPP:       "62895425966562",    // ← Ganti dengan nomor WhatsApp (format: 628xxx)
   INSTAGRAM:      "mopeta.official",  // ← Ganti dengan username Instagram
-  ADMIN_KODE:     "mopeta-admin",     // ← Kode di URL: admin.html?kode=mopeta-admin
-  ADMIN_PASSWORD: "admin1234"         // ← Kata sandi halaman admin
+  ADMIN_KODE:     "mopeta-mimin",     // ← Kode di URL: admin.html?kode=mopeta-admin
+  ADMIN_PASSWORD: "ganti3kali"         // ← Kata sandi halaman admin
 };
 
 document.addEventListener("DOMContentLoaded", function () {
